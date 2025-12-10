@@ -1,0 +1,174 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+  SELLER_VERIFIED
+  ADMIN
+}
+
+enum SellerStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum RequestStatus {
+  OPEN
+  MATCHING
+  OFFER_ACCEPTED
+  CLOSED
+  CANCELLED
+}
+
+enum ItemStatus {
+  DRAFT
+  PUBLISHED
+  RESERVED
+  SOLD
+  HIDDEN
+}
+
+enum SaleType {
+  AUCTION
+  DIRECT
+}
+
+enum DealStatus {
+  OPEN             // הצעה התקבלה, יש עסקה פתוחה
+  PENDING_PAYMENT  // יצאנו לצ'קאאוט / תשלום
+  PAID             // התשלום הושלם
+  CANCELLED        // בוטל
+  COMPLETE         // נסגר סופית
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String?
+  role         UserRole      @default(BUYER)
+  sellerStatus SellerStatus  @default(NONE)
+  passwordHash String?       @map("password_hash")
+  createdAt    DateTime      @default(now())
+
+  items        Item[]        @relation("SellerItems")
+  bids         Bid[]
+  requests     Request[]     @relation("BuyerRequests")
+  offers       Offer[]       @relation("SellerOffers")
+
+  dealsAsBuyer  Deal[]       @relation("BuyerDeals")
+  dealsAsSeller Deal[]       @relation("SellerDeals")
+}
+
+model Item {
+  id            String      @id @default(cuid())
+  title         String
+  description   String?
+  category      String?
+  mainImageUrl  String?
+  saleType      SaleType
+  startingPrice Int?
+  buyNowPrice   Int?
+  currency      String?     @default("USD")
+  auctionEnd    DateTime?
+
+  status        ItemStatus  @default(PUBLISHED)
+
+  seller        User        @relation("SellerItems", fields: [sellerId], references: [id])
+  sellerId      String
+
+  bids          Bid[]
+  createdAt     DateTime    @default(now())
+
+  deals         Deal[]      @relation("ItemDeals")
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  amount    Int
+  createdAt DateTime @default(now())
+
+  item      Item     @relation(fields: [itemId], references: [id])
+  itemId    String
+
+  bidder    User     @relation(fields: [bidderId], references: [id])
+  bidderId  String
+}
+
+model Request {
+  id            String        @id @default(cuid())
+  title         String
+  description   String?
+  category      String?
+  budgetMax     Int?
+  currency      String?       @default("USD")
+  createdAt     DateTime      @default(now())
+
+  status        RequestStatus @default(OPEN)
+
+  buyer         User          @relation("BuyerRequests", fields: [buyerId], references: [id])
+  buyerId       String
+
+  offers        Offer[]
+  chosenOfferId String?
+
+  deals         Deal[]        @relation("RequestDeals")
+}
+
+model Offer {
+  id          String       @id @default(cuid())
+  description String?
+  price       Int?
+  createdAt   DateTime     @default(now())
+
+  request     Request      @relation(fields: [requestId], references: [id])
+  requestId   String
+
+  seller      User         @relation("SellerOffers", fields: [sellerId], references: [id])
+  sellerId    String
+
+  status      OfferStatus  @default(PENDING)
+
+  deal        Deal?        @relation("OfferDeal")
+}
+
+model Deal {
+  id         String     @id @default(cuid())
+
+  buyer      User       @relation("BuyerDeals", fields: [buyerId], references: [id])
+  buyerId    String
+
+  seller     User       @relation("SellerDeals", fields: [sellerId], references: [id])
+  sellerId   String
+
+  request    Request    @relation("RequestDeals", fields: [requestId], references: [id])
+  requestId  String
+
+  offer      Offer      @relation("OfferDeal", fields: [offerId], references: [id])
+  offerId    String     @unique
+
+  item       Item?      @relation("ItemDeals", fields: [itemId], references: [id])
+  itemId     String?
+
+  status     DealStatus @default(OPEN)
+  totalPrice Int?
+  currency   String?    @default("USD")
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
