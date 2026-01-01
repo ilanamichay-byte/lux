@@ -11,7 +11,6 @@ async function signInAction(formData: FormData) {
   await signIn("credentials", {
     redirectTo: "/",
     redirect: true,
-    // @ts-expect-error – credentials חופשיים
     email,
     password,
   });

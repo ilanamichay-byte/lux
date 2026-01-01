@@ -3,6 +3,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { isSellerRole, type UserRole } from "@/lib/roles";
+import type { SaleType } from "@prisma/client";
+import { uploadImage } from "@/lib/upload-image";
+import { ImageUploadPreview } from "@/components/seller/image-upload-preview";
 
 async function createItemAction(formData: FormData) {
   "use server";
@@ -34,7 +37,9 @@ async function createItemAction(formData: FormData) {
     formData.get("description")?.toString().trim() ?? "";
 
   const saleTypeRaw = formData.get("saleType")?.toString() ?? "DIRECT";
-  const saleType = saleTypeRaw === "AUCTION" ? "AUCTION" : "DIRECT";
+  const saleType = (saleTypeRaw === "AUCTION"
+    ? "AUCTION"
+    : "DIRECT") as SaleType;
 
   const startingPriceStr =
     formData.get("startingPrice")?.toString().trim() ?? "";
@@ -43,8 +48,10 @@ async function createItemAction(formData: FormData) {
   const auctionEndStr =
     formData.get("auctionEnd")?.toString().trim() ?? "";
 
+  const imageFile = formData.get("image") as File | null;
+
   if (!title) {
-    // אפשר בעתיד להחזיר שגיאת ולידציה במקום פשוט לצאת
+    // TODO: בעתיד להחזיר הודעת שגיאה לממשק
     return;
   }
 
@@ -58,14 +65,23 @@ async function createItemAction(formData: FormData) {
 
   const auctionEnd = auctionEndStr ? new Date(auctionEndStr) : null;
 
-  // בונים data בצורה שמתאימה לסכמה שלך:
-  // Item: id, title, category, description, saleType, sellerId,
-  //       startingPrice, auctionEnd, buyNowPrice, createdAt...
+  // בניית data לפי ה־schema של Item
   const data: any = {
     title,
     saleType,
     sellerId: userId,
+    // currency: "USD", // אופציונלי – כבר יש default ב־schema
   };
+
+  if (imageFile && imageFile.size > 0) {
+    try {
+      const imageUrl = await uploadImage(imageFile);
+      data.mainImageUrl = imageUrl;
+    } catch (error) {
+      console.error("Failed to upload image:", error);
+      // continue without image or handle error
+    }
+  }
 
   if (category) data.category = category;
   if (description) data.description = description;
@@ -73,19 +89,20 @@ async function createItemAction(formData: FormData) {
   if (saleType === "AUCTION") {
     if (startingPrice != null) data.startingPrice = startingPrice;
     if (auctionEnd) data.auctionEnd = auctionEnd;
-  }
-
-  if (saleType === "DIRECT") {
+    if (buyNowPrice != null) data.buyNowPrice = buyNowPrice; // אופציונלי: גם Buy-Now לאוקשיין
+  } else {
+    // DIRECT
     if (buyNowPrice != null) data.buyNowPrice = buyNowPrice;
   }
 
   const created = await prisma.item.create({ data });
 
-  // שולחים למסך הנכון לפי סוג המכירה
+  // כרגע יש לנו דף דינמי רק לאוקשיינים
   if (saleType === "AUCTION") {
     redirect(`/auctions/${created.id}`);
   } else {
-    redirect(`/marketplace/${created.id}`);
+    // עד שנבנה /marketplace/[id]
+    redirect(`/marketplace`);
   }
 }
 
@@ -169,6 +186,9 @@ export default async function SellerListItemPage() {
             </label>
           </div>
         </div>
+
+        {/* תמונה - Client Component Wrapper */}
+        <ImageUploadPreview />
 
         {/* בסיס הפריט */}
         <div className="grid gap-4 md:grid-cols-2">
@@ -258,7 +278,7 @@ export default async function SellerListItemPage() {
         <button className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400">
           List item
         </button>
-      </form>
-    </div>
+      </form >
+    </div >
   );
 }

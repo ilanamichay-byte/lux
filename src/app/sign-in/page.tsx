@@ -19,7 +19,7 @@ async function signInAction(formData: FormData) {
     redirect: true,
     redirectTo: "/",
     // הקרדנציאלס שיגיעו ל-authorize
-    // @ts-expect-error – credentials חופשיים
+    // הקרדנציאלס שיגיעו ל-authorize
     email,
     password,
   });
@@ -58,7 +58,6 @@ async function registerAction(formData: FormData) {
   await signIn("credentials", {
     redirect: true,
     redirectTo: "/",
-    // @ts-expect-error – credentials
     email,
     password,
   });

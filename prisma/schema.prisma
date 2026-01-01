@@ -73,6 +73,11 @@ model User {
 
   dealsAsBuyer  Deal[]       @relation("BuyerDeals")
   dealsAsSeller Deal[]       @relation("SellerDeals")
+
+  notifications Notification[] @relation("UserNotifications")
+  wishlist      Wishlist[]     @relation("UserWishlist")
+  reviewsGiven  Review[]       @relation("ReviewsGiven")
+  reviewsReceived Review[]     @relation("ReviewsReceived")
 }
 
 model Item {
@@ -96,6 +101,11 @@ model Item {
   createdAt     DateTime    @default(now())
 
   deals         Deal[]      @relation("ItemDeals")
+  wishlistedBy  Wishlist[]  @relation("ItemWishlist")
+
+  @@index([status, saleType])
+  @@index([category])
+  @@index([title])
 }
 
 model Bid {
@@ -156,11 +166,13 @@ model Deal {
   seller     User       @relation("SellerDeals", fields: [sellerId], references: [id])
   sellerId   String
 
-  request    Request    @relation("RequestDeals", fields: [requestId], references: [id])
-  requestId  String
+  // 👇 עכשיו אופציונלי – כדי לאפשר דילים של Marketplace בלי Request
+  request    Request?   @relation("RequestDeals", fields: [requestId], references: [id])
+  requestId  String?
 
-  offer      Offer      @relation("OfferDeal", fields: [offerId], references: [id])
-  offerId    String     @unique
+  // 👇 גם Offer אופציונלי – לדילים של Buy Now אין Offer
+  offer      Offer?     @relation("OfferDeal", fields: [offerId], references: [id])
+  offerId    String?    @unique
 
   item       Item?      @relation("ItemDeals", fields: [itemId], references: [id])
   itemId     String?
@@ -171,4 +183,59 @@ model Deal {
 
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
+
+  review     Review?    @relation("DealReview")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  
+  user      User     @relation("UserNotifications", fields: [userId], references: [id])
+  userId    String
+
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  link      String?
+  
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  
+  user      User     @relation("UserWishlist", fields: [userId], references: [id])
+  userId    String
+
+  item      Item     @relation("ItemWishlist", fields: [itemId], references: [id])
+  itemId    String
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, itemId])
+  @@index([userId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  
+  reviewer  User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewerId String
+
+  seller    User     @relation("ReviewsReceived", fields: [sellerId], references: [id])
+  sellerId  String
+
+  deal      Deal     @relation("DealReview", fields: [dealId], references: [id])
+  dealId    String   @unique
+
+  rating    Int      // 1-5
+  comment   String?
+  
+  createdAt DateTime @default(now())
+
+  @@index([sellerId])
 }

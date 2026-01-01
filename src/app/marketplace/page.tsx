@@ -1,9 +1,13 @@
+// src/app/marketplace/page.tsx
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
 export default async function MarketplacePage() {
   const items = await prisma.item.findMany({
-    where: { saleType: "DIRECT" },
+    where: { 
+      saleType: "DIRECT",
+      status: "PUBLISHED",
+     },
     orderBy: { createdAt: "desc" },
     include: { seller: true },
     take: 24,
@@ -19,15 +23,15 @@ export default async function MarketplacePage() {
       <div className="mt-8 grid gap-6 md:grid-cols-3">
         {items.length === 0 && (
           <p className="text-sm text-neutral-400">
-            No direct-buy items yet. Run the seed script to add demo items.
+            No direct-buy items yet. Run the seed script or list an item as a
+            seller to see it here.
           </p>
         )}
 
         {items.map((item) => (
-          <Link
+          <div
             key={item.id}
-            href={`/marketplace/${item.id}`}
-            className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 hover:border-yellow-400/70 hover:bg-yellow-500/5 transition"
+            className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950"
           >
             <div className="relative h-52 w-full bg-neutral-900">
               <div className="flex h-full items-center justify-center text-xs text-neutral-600">
@@ -40,7 +44,9 @@ export default async function MarketplacePage() {
                 {item.category || "Category"}
               </p>
 
-              <h2 className="text-sm font-semibold">{item.title}</h2>
+              <h2 className="text-sm font-semibold line-clamp-2">
+                {item.title}
+              </h2>
 
               <p className="text-xs text-neutral-400">
                 Seller:{" "}
@@ -55,11 +61,14 @@ export default async function MarketplacePage() {
                 </p>
               )}
 
-              <div className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-yellow-500 px-3 py-1.5 text-xs font-semibold text-yellow-300 hover:bg-yellow-500/10">
+              <Link
+                href={`/marketplace/${item.id}`}
+                className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-yellow-500 px-3 py-1.5 text-xs font-semibold text-yellow-300 hover:bg-yellow-500/10"
+              >
                 BUY NOW
-              </div>
+              </Link>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </div>

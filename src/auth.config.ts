@@ -15,7 +15,7 @@ const secret =
 if (!process.env.AUTH_SECRET && !process.env.NEXTAUTH_SECRET) {
   console.warn(
     "⚠️ [auth] Using default DEV auth secret. " +
-      "For production, set AUTH_SECRET or NEXTAUTH_SECRET in .env.local."
+    "For production, set AUTH_SECRET or NEXTAUTH_SECRET in .env.local."
   );
 }
 
@@ -32,8 +32,11 @@ export const authConfig = {
           return null;
         }
 
+        const email = credentials.email as string;
+        const password = credentials.password as string;
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email },
         });
 
         if (!user || !user.passwordHash) {
@@ -41,7 +44,7 @@ export const authConfig = {
         }
 
         const isValid = await bcrypt.compare(
-          credentials.password,
+          password,
           user.passwordHash
         );
 
