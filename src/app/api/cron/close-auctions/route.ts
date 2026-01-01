@@ -8,6 +8,22 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
     try {
+        // Security: Verify cron secret to prevent unauthorized access
+        const authHeader = request.headers.get('authorization');
+        const cronSecret = process.env.CRON_SECRET;
+
+        // Check Vercel Cron header OR authorization header
+        const isVercelCron = request.headers.get('x-vercel-cron') === '1';
+        const isValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`;
+
+        if (!isVercelCron && !isValidSecret) {
+            console.warn('[CRON] Unauthorized access attempt to close-auctions');
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         const now = new Date();
 
         // 1. Find auctions that have ended but are still marked as PUBLISHED
@@ -36,7 +52,7 @@ export async function GET(request: Request) {
 
             if (winnerBid) {
                 // WON: Create Deal, Mark Sold
-                await prisma.$transaction(async (tx) => {
+                const deal = await prisma.$transaction(async (tx) => {
                     // 1. Update status to SOLD
                     await tx.item.update({
                         where: { id: item.id },
@@ -44,7 +60,7 @@ export async function GET(request: Request) {
                     });
 
                     // 2. Create Deal
-                    const deal = await tx.deal.create({
+                    const createdDeal = await tx.deal.create({
                         data: {
                             buyerId: winnerBid.bidderId,
                             sellerId: item.sellerId,
@@ -55,20 +71,18 @@ export async function GET(request: Request) {
                         },
                     });
 
-                    results.push({ id: item.id, status: "SOLD", winner: winnerBid.bidderId });
-
-                    // Notifications (Side effects outside transaction usually better, but fine here for simple logic)
+                    return createdDeal;
                 });
 
-                // Notify Winner
+                results.push({ id: item.id, dealId: deal.id, status: "SOLD", winner: winnerBid.bidderId });
+
+                // Notify Winner - use correct deal.id for checkout link
                 await createNotification({
                     userId: winnerBid.bidderId,
                     title: "You Won!",
                     message: `Congratulations! You won the auction for "${item.title}". Proceed to checkout.`,
                     type: "SUCCESS",
-                    link: `/checkout/${item.id}` // Wait, we need deal ID. We can find it or link to dashboard.
-                    // Actually linking to bids dashboard is safer if we don't have deal ID easily from the transaction block above without refactoring.
-                    // But wait, we can just link to /account/bids
+                    link: `/checkout/${deal.id}`
                 });
 
                 // Notify Seller

@@ -1,15 +1,12 @@
 // src/app/layout.tsx
+import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { auth, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  isSellerRole,
-  isAdminRole,
-  type UserRole,
-} from "@/lib/roles";
+import { isSellerRole, isAdminRole, type UserRole } from "@/lib/roles";
 
 import { Toaster } from "sonner";
 import { Bell, ShoppingCart, User, LogOut } from "lucide-react";
@@ -53,13 +50,13 @@ export default async function RootLayout({
 
   let unreadNotificationsCount = 0;
 
-  if (isLoggedIn && prisma.notification) {
+  if (isLoggedIn && (prisma as any).notification) {
     try {
       unreadNotificationsCount = await prisma.notification.count({
         where: {
           userId: user.id,
-          read: false
-        }
+          read: false,
+        },
       });
     } catch (e) {
       console.error("Failed to fetch notifications count:", e);
@@ -68,9 +65,16 @@ export default async function RootLayout({
 
   const showCartIcon = isBuyer || isAdmin;
 
+  // ✅ Locale + Direction (RTL/LTR) לפי cookie שנכתב ע"י middleware
+  const cookieStore = await cookies();
+  const locale = cookieStore.get("locale")?.value ?? "en";
+  const dir = locale === "he" ? "rtl" : "ltr";
+
   return (
-    <html lang="en">
-      <body className={`${inter.className} ${inter.variable} bg-background text-foreground antialiased`}>
+    <html lang={locale} dir={dir}>
+      <body
+        className={`${inter.className} ${inter.variable} bg-background text-foreground antialiased`}
+      >
         <div className="relative flex min-h-screen flex-col bg-background">
           <Toaster position="bottom-right" theme="dark" />
           {/* Background Ambient */}
@@ -133,7 +137,6 @@ export default async function RootLayout({
 
               {/* צד ימין */}
               <div className="flex min-w-[220px] flex-shrink-0 items-center justify-end gap-2 md:gap-6">
-
                 {/* Mobile Menu */}
                 <MobileMenu isLoggedIn={isLoggedIn} />
 
@@ -280,29 +283,19 @@ export default async function RootLayout({
               </div>
 
               <div className="flex gap-6">
-                <Link
-                  href="/terms"
-                  className="transition-colors hover:text-white"
-                >
+                <Link href="/terms" className="transition-colors hover:text-white">
                   Terms of Service
                 </Link>
-                <Link
-                  href="/privacy"
-                  className="transition-colors hover:text-white"
-                >
+                <Link href="/privacy" className="transition-colors hover:text-white">
                   Privacy Policy
                 </Link>
-                <Link
-                  href="/contact"
-                  className="transition-colors hover:text-white"
-                >
+                <Link href="/contact" className="transition-colors hover:text-white">
                   Contact Support
                 </Link>
               </div>
 
               <div className="text-neutral-600">
-                &copy; {new Date().getFullYear()} Lux Auction. All rights
-                reserved.
+                &copy; {new Date().getFullYear()} Lux Auction. All rights reserved.
               </div>
             </div>
           </footer>

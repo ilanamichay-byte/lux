@@ -33,35 +33,31 @@ async function createItemAction(formData: FormData) {
 
   const title = formData.get("title")?.toString().trim() ?? "";
   const category = formData.get("category")?.toString().trim() ?? "";
-  const description =
-    formData.get("description")?.toString().trim() ?? "";
+  const description = formData.get("description")?.toString().trim() ?? "";
 
   const saleTypeRaw = formData.get("saleType")?.toString() ?? "DIRECT";
-  const saleType = (saleTypeRaw === "AUCTION"
-    ? "AUCTION"
-    : "DIRECT") as SaleType;
+  const saleType = (saleTypeRaw === "AUCTION" ? "AUCTION" : "DIRECT") as SaleType;
 
-  const startingPriceStr =
-    formData.get("startingPrice")?.toString().trim() ?? "";
-  const buyNowPriceStr =
-    formData.get("buyNowPrice")?.toString().trim() ?? "";
-  const auctionEndStr =
-    formData.get("auctionEnd")?.toString().trim() ?? "";
+  const startingPriceStr = formData.get("startingPrice")?.toString().trim() ?? "";
+  const buyNowPriceStr = formData.get("buyNowPrice")?.toString().trim() ?? "";
+  const auctionEndStr = formData.get("auctionEnd")?.toString().trim() ?? "";
 
   const imageFile = formData.get("image") as File | null;
 
+  // ✅ במקום return שקט – מחזירים שגיאה לטופס
   if (!title) {
-    // TODO: בעתיד להחזיר הודעת שגיאה לממשק
-    return;
+    redirect("/seller/list-item?error=TITLE_REQUIRED");
   }
 
-  const startingPrice = startingPriceStr
-    ? parseInt(startingPriceStr, 10)
-    : null;
+  const startingPrice = startingPriceStr ? parseInt(startingPriceStr, 10) : null;
+  const buyNowPrice = buyNowPriceStr ? parseInt(buyNowPriceStr, 10) : null;
 
-  const buyNowPrice = buyNowPriceStr
-    ? parseInt(buyNowPriceStr, 10)
-    : null;
+  // ✅ חוק מוצר: מרקטפלייס (DIRECT) חייב מחיר
+  if (saleType === "DIRECT") {
+    if (buyNowPrice == null || Number.isNaN(buyNowPrice) || buyNowPrice <= 0) {
+      redirect("/seller/list-item?error=PRICE_REQUIRED");
+    }
+  }
 
   const auctionEnd = auctionEndStr ? new Date(auctionEndStr) : null;
 
@@ -70,7 +66,6 @@ async function createItemAction(formData: FormData) {
     title,
     saleType,
     sellerId: userId,
-    // currency: "USD", // אופציונלי – כבר יש default ב־schema
   };
 
   if (imageFile && imageFile.size > 0) {
@@ -79,7 +74,7 @@ async function createItemAction(formData: FormData) {
       data.mainImageUrl = imageUrl;
     } catch (error) {
       console.error("Failed to upload image:", error);
-      // continue without image or handle error
+      // בשלב MVP ממשיכים בלי תמונה
     }
   }
 
@@ -89,24 +84,30 @@ async function createItemAction(formData: FormData) {
   if (saleType === "AUCTION") {
     if (startingPrice != null) data.startingPrice = startingPrice;
     if (auctionEnd) data.auctionEnd = auctionEnd;
-    if (buyNowPrice != null) data.buyNowPrice = buyNowPrice; // אופציונלי: גם Buy-Now לאוקשיין
+    if (buyNowPrice != null) data.buyNowPrice = buyNowPrice; // אופציונלי גם באוקשיין
   } else {
     // DIRECT
-    if (buyNowPrice != null) data.buyNowPrice = buyNowPrice;
+    // buyNowPrice כבר מאומת כחובה > 0
+    data.buyNowPrice = buyNowPrice;
   }
 
   const created = await prisma.item.create({ data });
 
-  // כרגע יש לנו דף דינמי רק לאוקשיינים
   if (saleType === "AUCTION") {
     redirect(`/auctions/${created.id}`);
   } else {
-    // עד שנבנה /marketplace/[id]
     redirect(`/marketplace`);
   }
 }
 
-export default async function SellerListItemPage() {
+export default async function SellerListItemPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const sp = await searchParams;
+  const error = sp?.error;
+
   const session = await auth();
   if (!session?.user) {
     redirect("/sign-in");
@@ -127,8 +128,7 @@ export default async function SellerListItemPage() {
     redirect("/become-seller");
   }
 
-  const displayName =
-    dbUser?.name || dbUser?.email || "Lux Auction seller";
+  const displayName = dbUser?.name || dbUser?.email || "Lux Auction seller";
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 py-8">
@@ -137,18 +137,30 @@ export default async function SellerListItemPage() {
         <p className="text-[11px] uppercase tracking-[0.2em] text-neutral-500">
           Seller workspace
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-white">
-          List a new item
-        </h1>
+        <h1 className="mt-1 text-2xl font-semibold text-white">List a new item</h1>
         <p className="mt-2 text-xs text-neutral-400">
           You&apos;re listing as{" "}
-          <span className="font-semibold text-neutral-100">
-            {displayName}
-          </span>
-          . Choose whether this piece will go to the live auction floor
-          or directly to the marketplace.
+          <span className="font-semibold text-neutral-100">{displayName}</span>. Choose
+          whether this piece will go to the live auction floor or directly to the
+          marketplace.
         </p>
       </div>
+
+      {/* ✅ הודעות שגיאה ידידותיות */}
+      {error === "PRICE_REQUIRED" && (
+        <div className="rounded-2xl border border-red-500/40 bg-red-500/10 px-5 py-4 text-sm text-red-200">
+          חובה להזין מחיר עבור מוצר Direct buy (marketplace).
+          <div className="mt-1 text-xs text-red-200/80">
+            הכנס Direct price גדול מ־0 ונסה שוב.
+          </div>
+        </div>
+      )}
+
+      {error === "TITLE_REQUIRED" && (
+        <div className="rounded-2xl border border-red-500/40 bg-red-500/10 px-5 py-4 text-sm text-red-200">
+          חובה להזין כותרת (Title) למוצר.
+        </div>
+      )}
 
       {/* טופס יצירת אייטם */}
       <form
@@ -193,9 +205,7 @@ export default async function SellerListItemPage() {
         {/* בסיס הפריט */}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
-            <label className="block text-xs font-medium text-neutral-200">
-              Title
-            </label>
+            <label className="block text-xs font-medium text-neutral-200">Title</label>
             <input
               name="title"
               required
@@ -205,9 +215,7 @@ export default async function SellerListItemPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-200">
-              Category
-            </label>
+            <label className="block text-xs font-medium text-neutral-200">Category</label>
             <input
               name="category"
               className="mt-1 w-full rounded-lg border border-neutral-700 bg-black/40 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-yellow-500"
@@ -270,15 +278,15 @@ export default async function SellerListItemPage() {
         </div>
 
         <p className="text-[11px] text-neutral-500">
-          In the full product, you&apos;ll be able to upload certification,
-          media and more technical specs. For the MVP we&apos;re focusing on
-          title, category and pricing.
+          In the full product, you&apos;ll be able to upload certification, media and
+          more technical specs. For the MVP we&apos;re focusing on title, category and
+          pricing.
         </p>
 
         <button className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400">
           List item
         </button>
-      </form >
-    </div >
+      </form>
+    </div>
   );
 }

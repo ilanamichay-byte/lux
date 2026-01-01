@@ -4,14 +4,16 @@ import Link from "next/link";
 
 export default async function MarketplacePage() {
   const items = await prisma.item.findMany({
-    where: { 
+    where: {
       saleType: "DIRECT",
       status: "PUBLISHED",
-     },
+      buyNowPrice: { not: null }, // חשוב: מחיר חובה
+    },
     orderBy: { createdAt: "desc" },
     include: { seller: true },
     take: 24,
   });
+
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -33,10 +35,20 @@ export default async function MarketplacePage() {
             key={item.id}
             className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950"
           >
-            <div className="relative h-52 w-full bg-neutral-900">
-              <div className="flex h-full items-center justify-center text-xs text-neutral-600">
-                IMAGE
-              </div>
+            <div className="relative h-52 w-full overflow-hidden bg-neutral-900">
+              {item.mainImageUrl ? (
+                <img
+                  src={item.mainImageUrl}
+                  alt={item.title}
+                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-neutral-700">
+                  <svg className="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              )}
             </div>
 
             <div className="space-y-1 px-4 py-3">
@@ -55,17 +67,16 @@ export default async function MarketplacePage() {
                 </span>
               </p>
 
-              {item.buyNowPrice != null && (
-                <p className="text-xs font-medium text-yellow-400">
-                  Price: ${item.buyNowPrice.toLocaleString()}
-                </p>
-              )}
+              <p className="text-xs font-medium text-yellow-400">
+                Price: ${item.buyNowPrice!.toLocaleString()}
+              </p>
+
 
               <Link
                 href={`/marketplace/${item.id}`}
                 className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-yellow-500 px-3 py-1.5 text-xs font-semibold text-yellow-300 hover:bg-yellow-500/10"
               >
-                BUY NOW
+                {item.buyNowPrice != null ? "BUY NOW" : "CONTACT SELLER"}
               </Link>
             </div>
           </div>

@@ -13,7 +13,7 @@ async function buyNowAction(formData: FormData) {
   const user = session?.user as { id: string; role?: UserRole } | null;
 
   if (!user?.id) {
-    redirect("/sign-in"); // עדכן אם יש לך מסלול אחר
+    redirect("/sign-in");
   }
 
   const itemId = formData.get("itemId");
@@ -23,7 +23,6 @@ async function buyNowAction(formData: FormData) {
   }
 
   const deal = await prisma.$transaction(async (tx) => {
-    // טוענים את הפריט + דילים אקטיביים עליו
     const item = await tx.item.findUnique({
       where: { id: itemId },
       include: {
@@ -42,9 +41,7 @@ async function buyNowAction(formData: FormData) {
       },
     });
 
-    if (!item) {
-      throw new Error("Item not found");
-    }
+    if (!item) throw new Error("Item not found");
 
     if (item.saleType !== "DIRECT") {
       throw new Error("Item is not available for direct sale");
@@ -58,20 +55,17 @@ async function buyNowAction(formData: FormData) {
       throw new Error("Item has no buy-now price defined");
     }
 
-    // אי אפשר לקנות את עצמך
     if (item.sellerId === user.id) {
       throw new Error("Seller cannot buy their own item");
     }
 
     const activeDeals = item.deals;
 
-    // האם כבר יש עסקה אקטיבית *לאותו קונה*?
     const existingForBuyer = activeDeals.find(
       (d) => d.buyerId === user.id && d.status !== "PAID",
     );
 
     if (existingForBuyer) {
-      // מוודאים שהפריט מסומן RESERVED
       if (item.status !== "RESERVED") {
         await tx.item.update({
           where: { id: item.id },
@@ -79,7 +73,6 @@ async function buyNowAction(formData: FormData) {
         });
       }
 
-      // אם העסקה עוד ב-OPEN – מקדמים ל-PENDING_PAYMENT
       if (existingForBuyer.status === "OPEN") {
         await tx.deal.update({
           where: { id: existingForBuyer.id },
@@ -87,22 +80,22 @@ async function buyNowAction(formData: FormData) {
         });
       }
 
-      // מחזירים את ה-Deal הקיים
       return tx.deal.findUnique({
         where: { id: existingForBuyer.id },
       });
     }
 
-    // אם יש עסקה אקטיבית על הפריט למישהו אחר – חוסמים
     const activeForOthers = activeDeals.find(
-      (d) => d.buyerId !== user.id && d.status !== "COMPLETE" && d.status !== "CANCELLED",
+      (d) =>
+        d.buyerId !== user.id &&
+        d.status !== "COMPLETE" &&
+        d.status !== "CANCELLED",
     );
 
     if (activeForOthers) {
       throw new Error("Item already has an active or paid deal");
     }
 
-    // יוצרים Deal חדש תקין
     const createdDeal = await tx.deal.create({
       data: {
         buyer: {
@@ -116,11 +109,10 @@ async function buyNowAction(formData: FormData) {
         },
         totalPrice: item.buyNowPrice,
         currency: item.currency ?? "USD",
-        status: "PENDING_PAYMENT", // יצאנו לצ'קאאוט, מחכים לתשלום
+        status: "PENDING_PAYMENT",
       },
     });
 
-    // מסמנים את הפריט כ-RESERVED
     await tx.item.update({
       where: { id: item.id },
       data: {
@@ -138,6 +130,60 @@ async function buyNowAction(formData: FormData) {
   redirect(`/checkout/${deal.id}`);
 }
 
+// Server Action – יצירת פנייה למוכר דרך Notification (MVP)
+async function contactSellerAction(formData: FormData) {
+  "use server";
+
+  const session = await auth();
+  const user = session?.user as { id: string; email?: string } | null;
+
+  if (!user?.id) {
+    redirect("/sign-in");
+  }
+
+  const itemId = formData.get("itemId");
+  const phone = formData.get("phone");
+  const message = formData.get("message");
+
+  if (typeof itemId !== "string" || !itemId) throw new Error("Missing itemId");
+
+  const phoneStr = typeof phone === "string" ? phone.trim() : "";
+  const msgStr = typeof message === "string" ? message.trim() : "";
+
+  if (!phoneStr || !msgStr) {
+    throw new Error("Missing phone or message");
+  }
+
+  const item = await prisma.item.findUnique({
+    where: { id: itemId },
+    select: { id: true, title: true, sellerId: true },
+  });
+
+  if (!item) throw new Error("Item not found");
+
+  await prisma.notification.create({
+    data: {
+      userId: item.sellerId,
+      title: "New inquiry on your listing",
+      type: "INFO",
+      message: `Item: "${item.title}" | From: ${user.email || user.id} | Phone: ${phoneStr} | Message: ${msgStr}`,
+      link: `/marketplace/${item.id}`,
+    },
+  });
+
+  await prisma.notification.create({
+    data: {
+      userId: user.id,
+      title: "Inquiry sent to seller",
+      type: "SUCCESS",
+      message: `Your message was sent regarding "${item.title}". The seller will contact you at: ${phoneStr}`,
+      link: `/marketplace/${item.id}`,
+    },
+  });
+
+  redirect(`/marketplace/${item.id}?sent=1`);
+}
+
 export default async function MarketplaceItemPage({
   params,
 }: {
@@ -145,9 +191,7 @@ export default async function MarketplaceItemPage({
 }) {
   const { id } = await params;
 
-  if (!id) {
-    notFound();
-  }
+  if (!id) notFound();
 
   const item = await prisma.item.findUnique({
     where: { id },
@@ -156,20 +200,14 @@ export default async function MarketplaceItemPage({
     },
   });
 
-  if (!item) {
-    notFound();
-  }
+  if (!item) notFound();
 
   const anyItem = item as any;
 
-  const title =
-    anyItem.title ??
-    anyItem.name ??
-    "Untitled marketplace item";
+  const title = anyItem.title ?? anyItem.name ?? "Untitled marketplace item";
 
   const description =
-    anyItem.description ??
-    "No description provided for this listing yet.";
+    anyItem.description ?? "No description provided for this listing yet.";
 
   const currency = anyItem.currency ?? "USD";
 
@@ -180,22 +218,15 @@ export default async function MarketplaceItemPage({
     anyItem.price ??
     null;
 
-  const price =
-    priceRaw != null ? Number(priceRaw) : null;
+  const price = priceRaw != null ? Number(priceRaw) : null;
 
   const sellerInitial =
-    item.seller?.name?.charAt(0) ||
-    item.seller?.email?.charAt(0) ||
-    "U";
+    item.seller?.name?.charAt(0) || item.seller?.email?.charAt(0) || "U";
 
-  const sellerName =
-    item.seller?.name ||
-    item.seller?.email ||
-    "Unknown seller";
+  const sellerName = item.seller?.name || item.seller?.email || "Unknown seller";
 
   return (
     <div className="space-y-6">
-      {/* ניווט עליון קטן */}
       <div className="flex items-center justify-between gap-2 text-xs text-neutral-400">
         <div className="flex items-center gap-2">
           <Link
@@ -211,15 +242,12 @@ export default async function MarketplaceItemPage({
       </div>
 
       <div className="grid gap-8 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        {/* צד שמאל – מידע על הפריט */}
         <div className="space-y-5 rounded-2xl border border-neutral-800 bg-neutral-950/90 p-6">
           <p className="text-[11px] uppercase tracking-[0.2em] text-neutral-500">
             Marketplace • Direct sale
           </p>
 
-          <h1 className="text-2xl font-semibold text-white">
-            {title}
-          </h1>
+          <h1 className="text-2xl font-semibold text-white">{title}</h1>
 
           {description && (
             <p className="text-sm leading-relaxed text-neutral-200">
@@ -237,12 +265,9 @@ export default async function MarketplaceItemPage({
           </div>
         </div>
 
-        {/* צד ימין – פאנל קנייה + מוכר */}
         <div className="space-y-4">
           <div className="space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/90 p-6">
-            <h2 className="text-sm font-semibold text-white">
-              Purchase panel
-            </h2>
+            <h2 className="text-sm font-semibold text-white">Purchase panel</h2>
 
             <div className="space-y-2 text-sm text-neutral-200">
               {price != null ? (
@@ -253,13 +278,11 @@ export default async function MarketplaceItemPage({
                   </span>
                 </p>
               ) : (
-                <p className="text-xs text-neutral-400">
-                  Price will be defined in the full product.
-                </p>
+                <p className="text-xs text-neutral-400">Price on request.</p>
               )}
             </div>
 
-            {/* טופס BUY NOW אמיתי */}
+            {/* BUY NOW */}
             <form action={buyNowAction} className="mt-4 space-y-2">
               <input type="hidden" name="itemId" value={item.id} />
 
@@ -268,29 +291,41 @@ export default async function MarketplaceItemPage({
                 className="flex w-full items-center justify-center rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 disabled:bg-neutral-700 disabled:text-neutral-300"
                 disabled={price == null}
               >
-                {price != null
-                  ? "Buy now"
-                  : "Buy now (price missing)"}
+                {price != null ? "Buy now" : "Buy now (price missing)"}
               </button>
+            </form>
+
+            {/* CONTACT SELLER */}
+            <form action={contactSellerAction} className="mt-3 space-y-2">
+              <input type="hidden" name="itemId" value={item.id} />
+
+              <input
+                name="phone"
+                placeholder="Your phone (WhatsApp/Call)"
+                className="w-full rounded-xl border border-neutral-800 bg-black/60 px-3 py-2 text-xs text-neutral-100 placeholder:text-neutral-500"
+              />
+
+              <textarea
+                name="message"
+                placeholder="Write a short message to the seller..."
+                className="min-h-[90px] w-full rounded-xl border border-neutral-800 bg-black/60 px-3 py-2 text-xs text-neutral-100 placeholder:text-neutral-500"
+              />
 
               <button
-                type="button"
-                className="flex w-full items-center justify-center rounded-full border border-neutral-700 bg-black/70 px-4 py-2 text-xs font-semibold text-neutral-300"
-                disabled
+                type="submit"
+                className="flex w-full items-center justify-center rounded-full border border-neutral-700 bg-black/70 px-4 py-2 text-xs font-semibold text-neutral-200 hover:border-yellow-400 hover:text-yellow-200"
               >
-                Contact seller (coming soon)
+                Contact seller
               </button>
             </form>
 
             <p className="pt-2 text-[10px] leading-relaxed text-neutral-500">
-              This button either reuses your existing active deal for this item
-              or creates a new one in a transaction, reserves the item, and
-              redirects you into the checkout flow. No double-selling, no messy
-              duplicates.
+              Buy now either reuses your existing active deal for this item or
+              creates a new one, reserves the item, and redirects you into the
+              checkout flow.
             </p>
           </div>
 
-          {/* פאנל מוכר */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-950/90 p-6">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
               Seller
