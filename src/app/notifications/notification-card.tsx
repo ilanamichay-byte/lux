@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, Trash2, X } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { markNotificationAsRead, deleteNotification } from "./actions";
 import { useTransition } from "react";
+import { formatRelativeTime } from "@/lib/utils";
 
 interface NotificationCardProps {
     notification: {
@@ -32,48 +33,90 @@ export function NotificationCard({ notification }: NotificationCardProps) {
         });
     };
 
-    const typeColors = {
-        SUCCESS: "border-green-500/30 bg-green-500/5",
-        WARNING: "border-orange-500/30 bg-orange-500/5",
-        ERROR: "border-red-500/30 bg-red-500/5",
-        INFO: "border-blue-500/30 bg-blue-500/5",
+    // Type-based left border colors for visual hierarchy
+    const typeBorderColors = {
+        SUCCESS: "border-l-green-500",
+        WARNING: "border-l-amber-500",
+        ERROR: "border-l-red-500",
+        INFO: "border-l-blue-500",
     };
 
-    const borderColor = notification.read
-        ? "border-neutral-800 bg-neutral-900/40"
-        : (typeColors[notification.type as keyof typeof typeColors] || "border-yellow-500/30 bg-yellow-500/5");
+    // Background colors by type (subtle)
+    const typeBackgrounds = {
+        SUCCESS: "bg-green-500/5",
+        WARNING: "bg-amber-500/5",
+        ERROR: "bg-red-500/5",
+        INFO: "bg-blue-500/5",
+    };
+
+    const leftBorder = notification.read
+        ? "border-l-neutral-700"
+        : (typeBorderColors[notification.type as keyof typeof typeBorderColors] || "border-l-amber-400");
+
+    const bgColor = notification.read
+        ? "bg-neutral-900/40"
+        : (typeBackgrounds[notification.type as keyof typeof typeBackgrounds] || "bg-amber-500/5");
 
     return (
         <div
-            className={`relative flex flex-col gap-1 rounded-xl border p-4 transition-opacity ${borderColor} ${isPending ? "opacity-50" : ""} ${notification.read ? "text-neutral-400" : "text-neutral-100"}`}
+            className={`
+                relative flex flex-col gap-2 rounded-xl border border-neutral-800 
+                border-l-4 ${leftBorder} ${bgColor}
+                p-4 transition-all duration-200
+                ${isPending ? "opacity-50 pointer-events-none" : ""} 
+                ${notification.read
+                    ? "shadow-none"
+                    : "shadow-[0_0_15px_rgba(0,0,0,0.3)]"
+                }
+            `}
         >
             <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
+                    {/* Title with unread indicator */}
                     <div className="flex items-center gap-2">
-                        <span className="font-semibold">{notification.title}</span>
+                        <span className={`
+                            ${notification.read
+                                ? "font-medium text-neutral-400"
+                                : "font-semibold text-white"
+                            }
+                        `}>
+                            {notification.title}
+                        </span>
                         {!notification.read && (
-                            <span className="h-2 w-2 rounded-full bg-yellow-500" />
+                            <span className="flex-shrink-0 h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
                         )}
                     </div>
-                    <p className="mt-1 text-sm">{notification.message}</p>
+
+                    {/* Message */}
+                    <p className={`
+                        mt-1 text-sm leading-relaxed
+                        ${notification.read ? "text-neutral-500" : "text-neutral-300"}
+                    `}>
+                        {notification.message}
+                    </p>
+
+                    {/* Action link */}
                     {notification.link && (
                         <a
                             href={notification.link}
                             onClick={handleMarkAsRead}
-                            className="mt-2 inline-block text-xs text-yellow-500 hover:underline"
+                            className="mt-2 inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-white transition-colors"
                         >
-                            View Details →
+                            View Details
+                            <span className="text-[10px]">→</span>
                         </a>
                     )}
                 </div>
 
-                <div className="flex items-center gap-1">
+                {/* Action buttons */}
+                <div className="flex items-center gap-1 flex-shrink-0">
                     {!notification.read && (
                         <button
                             onClick={handleMarkAsRead}
                             disabled={isPending}
                             className="rounded-full p-1.5 text-neutral-500 hover:bg-neutral-800 hover:text-white transition-colors"
                             title="Mark as read"
+                            aria-label="Mark notification as read"
                         >
                             <Check className="h-4 w-4" />
                         </button>
@@ -83,19 +126,19 @@ export function NotificationCard({ notification }: NotificationCardProps) {
                         disabled={isPending}
                         className="rounded-full p-1.5 text-neutral-500 hover:bg-red-500/10 hover:text-red-400 transition-colors"
                         title="Delete"
+                        aria-label="Delete notification"
                     >
                         <Trash2 className="h-4 w-4" />
                     </button>
                 </div>
             </div>
 
-            <span className="mt-2 text-[10px] uppercase tracking-wider text-neutral-500">
-                {new Date(notification.createdAt).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                })}
+            {/* Relative timestamp */}
+            <span className={`
+                text-[10px] uppercase tracking-wider
+                ${notification.read ? "text-neutral-600" : "text-neutral-500"}
+            `}>
+                {formatRelativeTime(notification.createdAt)}
             </span>
         </div>
     );
@@ -132,18 +175,20 @@ export function NotificationHeaderActions({ hasUnread, hasNotifications }: Notif
                 <button
                     onClick={handleMarkAllAsRead}
                     disabled={isPending}
-                    className="rounded-full border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 hover:border-yellow-500 hover:text-yellow-400 transition-colors disabled:opacity-50"
+                    className="rounded-full border border-neutral-700 px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:border-neutral-500 hover:text-white disabled:opacity-50"
+                    aria-label="Mark all notifications as read"
                 >
-                    <Check className="mr-1 inline h-3 w-3" />
+                    <Check className="mr-1.5 inline h-3 w-3" />
                     Mark all read
                 </button>
             )}
             <button
                 onClick={handleDeleteAll}
                 disabled={isPending}
-                className="rounded-full border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 hover:border-red-500 hover:text-red-400 transition-colors disabled:opacity-50"
+                className="rounded-full border border-neutral-700 px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:border-red-500/50 hover:text-red-400 disabled:opacity-50"
+                aria-label="Delete all notifications"
             >
-                <Trash2 className="mr-1 inline h-3 w-3" />
+                <Trash2 className="mr-1.5 inline h-3 w-3" />
                 Clear all
             </button>
         </div>

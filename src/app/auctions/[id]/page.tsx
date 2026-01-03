@@ -273,12 +273,12 @@ export default async function AuctionDetailsPage({
 
   return (
     <div className="space-y-6">
-      {/* ניווט עליון קטן */}
+      {/* Top navigation bar */}
       <div className="flex items-center justify-between gap-2 text-xs text-neutral-400">
         <div className="flex items-center gap-2">
           <Link
             href="/auctions"
-            className="rounded-full border border-neutral-800 bg-black/50 px-3 py-1 hover:border-yellow-400 hover:text-yellow-200"
+            className="rounded-full border border-neutral-700 bg-neutral-900/80 px-3 py-1.5 text-neutral-300 transition-colors hover:border-neutral-500 hover:text-white"
           >
             ← Back to auctions
           </Link>
@@ -289,17 +289,19 @@ export default async function AuctionDetailsPage({
         {endsAt && (
           <span
             className={cn(
-              "rounded-full border px-3 py-1 text-[10px] font-semibold",
+              "rounded-full border px-4 py-1.5 text-[11px] font-semibold",
               auctionEnded
-                ? "border-neutral-600 bg-neutral-800 text-neutral-300"
-                : "border-red-500/40 bg-red-500/10 text-red-200"
+                ? "border-neutral-700 bg-neutral-800/80 text-neutral-400"
+                : "border-amber-500/40 bg-amber-500/10 text-amber-200"
             )}
           >
-            {auctionEnded ? "Ended: " : "Ends In: "}
+            {auctionEnded ? "ENDED" : "ENDS IN: "}
             {endsAt && !auctionEnded ? (
-              <CountdownTimer endDate={new Date(endsAt)} className="inline-flex text-xs" />
+              <CountdownTimer endDate={new Date(endsAt)} className="inline-flex text-xs font-bold" />
             ) : (
-              new Date(endsAt!).toLocaleString("en-GB")
+              <span className="font-normal text-neutral-400">
+                {new Date(endsAt!).toLocaleString("en-GB")}
+              </span>
             )}
           </span>
         )}
@@ -378,73 +380,74 @@ export default async function AuctionDetailsPage({
           </div>
         </div>
 
-        {/* צד ימין – פאנל בידים */}
-        <div className="space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/90 p-6">
-          <h2 className="text-sm font-semibold text-white">
-            Bidding panel
-          </h2>
+        {/* Right side - Bidding Panel */}
+        <div className="space-y-5 rounded-2xl border border-neutral-800 bg-neutral-950/90 p-6">
+          {/* Panel Header */}
+          <div className="border-b border-neutral-800 pb-4">
+            <h2 className="text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+              Bidding Panel
+            </h2>
+          </div>
 
-          {/* הודעת שגיאה מה־action אם יש */}
+          {/* Error message */}
           {errorMessage && (
-            <div className="rounded-xl border border-red-500/50 bg-red-500/10 px-4 py-2 text-[11px] text-red-200">
+            <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-[12px] text-red-200">
               {errorMessage}
             </div>
           )}
 
-          <div className="space-y-2 text-sm text-neutral-200">
+          {/* Current Price Block - Prominent */}
+          <div className="rounded-xl bg-neutral-900/60 p-4">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">
+              {currentPrice != null ? "Current Bid" : "Starting Price"}
+            </p>
             {currentPrice != null ? (
-              <p>
-                Current bid:{" "}
-                <span className="font-semibold text-yellow-300">
-                  {currency}{" "}
-                  {Number(currentPrice).toLocaleString()}
-                </span>
+              <p className="mt-1 text-2xl font-bold text-white">
+                {currency} {Number(currentPrice).toLocaleString()}
               </p>
             ) : startingPrice != null ? (
-              <p>
-                Starting price:{" "}
-                <span className="font-semibold text-yellow-300">
-                  {currency}{" "}
-                  {Number(startingPrice).toLocaleString()}
-                </span>
+              <p className="mt-1 text-2xl font-bold text-white">
+                {currency} {Number(startingPrice).toLocaleString()}
               </p>
             ) : (
-              <p className="text-xs text-neutral-400">
-                No starting price defined yet.
+              <p className="mt-1 text-lg text-neutral-400">
+                No starting price set
               </p>
             )}
 
+            {/* Bid count */}
             {bidCount > 0 && (
-              <p className="text-xs text-neutral-400">
-                Bids placed:{" "}
-                <span className="font-semibold text-neutral-200">
-                  {bidCount}
-                </span>
+              <p className="mt-2 text-xs text-neutral-400">
+                {bidCount} bid{bidCount !== 1 ? "s" : ""} placed
               </p>
             )}
+          </div>
 
+          {/* Auction Status Info */}
+          <div className="space-y-2 text-xs">
             {auctionEndDate && (
-              <p className="text-xs text-neutral-400">
-                Auction{" "}
-                {auctionEnded ? "ended" : "ends"} at:{" "}
-                {auctionEndDate.toLocaleString("en-GB")}
+              <p className="text-neutral-400">
+                Auction {auctionEnded ? "ended" : "ends"} at:{" "}
+                <span className="text-neutral-300">
+                  {auctionEndDate.toLocaleString("en-GB")}
+                </span>
               </p>
             )}
 
             {!isOpenForBidding && (
-              <p className="mt-1 text-[11px] text-red-300">
+              <p className="rounded-lg bg-neutral-900 px-3 py-2 text-[11px] text-neutral-400">
                 This auction is currently closed for bidding.
               </p>
             )}
           </div>
 
-          {/* לוגיקה למי יכול לבצע בידים */}
+          {/* Auth/Permission notices */}
           {!currentUserId && (
-            <div className="mt-3 rounded-xl border border-neutral-800 bg-black/70 px-4 py-3 text-[11px] text-neutral-300">
+            <div className="rounded-xl border border-neutral-700 bg-neutral-900/80 px-4 py-3 text-[12px] text-neutral-300">
               Please{" "}
               <Link
                 href="/sign-in"
-                className="font-semibold text-yellow-300 underline-offset-2 hover:underline"
+                className="font-semibold text-white underline-offset-2 hover:underline"
               >
                 sign in
               </Link>{" "}
@@ -453,61 +456,65 @@ export default async function AuctionDetailsPage({
           )}
 
           {currentUserId && isSellerOfItem && (
-            <div className="mt-3 rounded-xl border border-neutral-800 bg-black/70 px-4 py-3 text-[11px] text-neutral-300">
-              You are the seller of this lot. Sellers cannot bid on
-              their own listings.
+            <div className="rounded-xl border border-neutral-700 bg-neutral-900/80 px-4 py-3 text-[12px] text-neutral-400">
+              You are the seller of this lot. Sellers cannot bid on their own listings.
             </div>
           )}
 
-          {/* טופס BID אמיתי */}
+          {/* Bid Form */}
           <form
             action={placeBidAction}
-            className="mt-4 space-y-3"
+            className="space-y-4"
           >
             <input type="hidden" name="itemId" value={item.id} />
 
-            <div className="space-y-1 text-xs text-neutral-300">
+            <div className="space-y-2">
               <label
                 htmlFor="bid-amount"
-                className="text-[11px] uppercase tracking-[0.18em] text-neutral-500"
+                className="block text-[11px] uppercase tracking-[0.18em] text-neutral-500"
               >
                 Your bid
               </label>
+
               <div className="flex gap-2">
-                <input
-                  id="bid-amount"
-                  name="amount"
-                  type="number"
-                  min={minNextBid}
-                  step={1}
-                  inputMode="numeric"
-                  className="flex-1 rounded-full border border-neutral-700 bg-black/60 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-yellow-400"
-                  placeholder={`${currency} ${minNextBid.toLocaleString()}`}
-                  disabled={!canBid}
-                  required
-                />
+                <div className="relative flex-1">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-neutral-500">
+                    {currency}
+                  </span>
+                  <input
+                    id="bid-amount"
+                    name="amount"
+                    type="number"
+                    min={minNextBid}
+                    step={1}
+                    inputMode="numeric"
+                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900/80 py-3 pl-12 pr-4 text-base text-white outline-none transition-colors focus:border-neutral-500 disabled:opacity-50"
+                    placeholder={minNextBid.toLocaleString()}
+                    disabled={!canBid}
+                    required
+                  />
+                </div>
                 <button
                   type="submit"
-                  className="flex items-center justify-center rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 disabled:bg-neutral-700 disabled:text-neutral-300"
+                  className="flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-primary-soft disabled:bg-neutral-700 disabled:text-neutral-400"
                   disabled={!canBid}
                 >
-                  Place bid
+                  Place Bid
                 </button>
               </div>
+
               <p className="text-[11px] text-neutral-500">
-                Minimum allowed:{" "}
-                <span className="font-semibold text-neutral-200">
+                Minimum:{" "}
+                <span className="text-neutral-300">
                   {currency} {minNextBid.toLocaleString()}
                 </span>
               </p>
             </div>
           </form>
 
-          <p className="pt-2 text-[10px] leading-relaxed text-neutral-500">
-            In the production version this panel will connect to a live
-            bidding engine, payment, escrow and compliance checks. For
-            the MVP, bids are persisted in the database and can be
-            reviewed in real time by the exchange team.
+          {/* Fine print */}
+          <p className="border-t border-neutral-800 pt-4 text-[10px] leading-relaxed text-neutral-600">
+            All bids are binding. Review our terms before placing a bid.
           </p>
         </div>
       </div>

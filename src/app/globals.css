@@ -1,36 +1,61 @@
 @import "tailwindcss";
 
 :root {
-  /* Default to dark mode aesthetics for luxury feel */
+  /* ===== LUXURY DARK THEME ===== */
+  
+  /* Core backgrounds - refined luxury blacks */
   --background: #050505;
   --foreground: #fafafa;
-
+  
+  /* Card surfaces with depth */
   --card: #0a0a0a;
   --card-foreground: #fafafa;
-
+  --card-elevated: #0d0d0d;
+  
+  /* Popover/dropdown */
   --popover: #0a0a0a;
   --popover-foreground: #fafafa;
-
+  
+  /* Primary Gold - use sparingly for CTAs only */
   --primary: #c5a059;
-  /* Luxury Gold */
   --primary-foreground: #000000;
-
+  --primary-soft: #d4b978; /* Softer gold for hover states */
+  
+  /* Champagne/Ivory - luxury alternative to pure gold */
+  --champagne: #f5f0e6;
+  --champagne-muted: #e8e0d0;
+  
+  /* Neutral Luxury Palette */
+  --platinum: #8b8b8b;
+  --pearl: #f5f5f5;
+  --onyx: #0d0d0d;
+  --charcoal: #1a1a1a;
+  
+  /* Secondary & Muted */
   --secondary: #1f1f1f;
   --secondary-foreground: #fafafa;
-
   --muted: #1f1f1f;
   --muted-foreground: #a1a1aa;
-
+  
+  /* Accent - subtle elevation */
   --accent: #27272a;
   --accent-foreground: #fafafa;
-
+  
+  /* Semantic Colors */
   --destructive: #7f1d1d;
   --destructive-foreground: #fef2f2;
-
+  --success: #166534;
+  --success-foreground: #dcfce7;
+  --warning: #92400e;
+  --warning-foreground: #fef3c7;
+  
+  /* Borders & Inputs */
   --border: #27272a;
+  --border-subtle: #1f1f1f;
   --input: #27272a;
   --ring: #c5a059;
-
+  
+  /* Spacing & Radius */
   --radius: 0.5rem;
 }
 
@@ -39,10 +64,18 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-card-elevated: var(--card-elevated);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-champagne: var(--champagne);
+  --color-champagne-muted: var(--champagne-muted);
+  --color-platinum: var(--platinum);
+  --color-pearl: var(--pearl);
+  --color-onyx: var(--onyx);
+  --color-charcoal: var(--charcoal);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -51,7 +84,12 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --radius-sm: calc(var(--radius) - 2px);
@@ -67,4 +105,45 @@ body {
   font-family: var(--font-geist-sans), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== UTILITY CLASSES FOR LUXURY STYLING ===== */
+
+/* Gold should only be used for primary CTAs */
+.btn-primary-gold {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  transition: background 0.2s ease;
+}
+.btn-primary-gold:hover {
+  background: var(--primary-soft);
+}
+
+/* Use white/neutral for secondary actions */
+.btn-secondary-neutral {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  transition: all 0.2s ease;
+}
+.btn-secondary-neutral:hover {
+  border-color: var(--platinum);
+  color: var(--pearl);
+}
+
+/* Champagne highlight for softer luxury accents */
+.text-champagne {
+  color: var(--champagne);
+}
+.bg-champagne-subtle {
+  background: rgba(245, 240, 230, 0.05);
+}
+
+/* Card elevation states */
+.card-elevated {
+  background: var(--card-elevated);
+  border-color: var(--border);
+}
+.card-elevated:hover {
+  border-color: var(--platinum);
 }

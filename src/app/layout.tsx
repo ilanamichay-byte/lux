@@ -143,13 +143,16 @@ export default async function RootLayout({
                 <div className="flex items-center gap-2 border-r border-neutral-800 pr-2 md:pr-6">
                   <Link
                     href="/notifications"
-                    className="relative flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-900 hover:text-white"
+                    className="relative flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 transition-all hover:bg-neutral-800 hover:text-white"
+                    aria-label={`Notifications${unreadNotificationsCount > 0 ? ` (${unreadNotificationsCount} unread)` : ''}`}
                   >
                     <Bell className="h-4 w-4" strokeWidth={1.5} />
                     {unreadNotificationsCount > 0 && (
-                      <span className="absolute right-0 top-0 flex h-2.5 w-2.5">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500"></span>
+                      <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60"></span>
+                        <span className="relative inline-flex h-3 w-3 items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold text-black">
+                          {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                        </span>
                       </span>
                     )}
                   </Link>
@@ -157,7 +160,8 @@ export default async function RootLayout({
                   {showCartIcon && (
                     <Link
                       href="/cart"
-                      className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-900 hover:text-white"
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 transition-all hover:bg-neutral-800 hover:text-white"
+                      aria-label="Shopping cart"
                     >
                       <ShoppingCart className="h-4 w-4" strokeWidth={1.5} />
                     </Link>

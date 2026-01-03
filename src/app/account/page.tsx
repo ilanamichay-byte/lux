@@ -122,43 +122,59 @@ export default async function AccountPage() {
     <div className="space-y-8 py-8">
       {/* User Header Card */}
       <section className="rounded-2xl border border-neutral-800 bg-neutral-950/90 p-6">
-        <p className="text-[11px] uppercase tracking-[0.2em] text-neutral-500">
-          Account overview
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold text-white">
-          {displayName}
-        </h1>
+        <div className="border-b border-neutral-800 pb-5">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+            Account overview
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold text-white">
+            {displayName}
+          </h1>
+        </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-neutral-300">
-          <span className="inline-flex items-center gap-1 rounded-full bg-neutral-900 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-neutral-300">
-            Role:{" "}
-            <span className="font-semibold text-yellow-300">
-              {isAdmin ? "ADMIN" : isSeller ? "SELLER" : "BUYER"}
-            </span>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          {/* Role Badge - semantic colors */}
+          <span className={`
+            inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-[0.15em] font-medium
+            ${isAdmin
+              ? "bg-purple-500/10 text-purple-300 border border-purple-500/30"
+              : isSeller
+                ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+                : "bg-neutral-800 text-neutral-300 border border-neutral-700"
+            }
+          `}>
+            <span className={`h-1.5 w-1.5 rounded-full ${isAdmin ? "bg-purple-400" : isSeller ? "bg-emerald-400" : "bg-neutral-500"
+              }`} />
+            {isAdmin ? "Admin" : isSeller ? "Seller" : "Buyer"}
           </span>
 
+          {/* Seller Status Badge */}
           {dbUser?.sellerStatus && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-neutral-900 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-neutral-400">
-              Seller status:{" "}
-              <span
-                className={
-                  dbUser.sellerStatus === "APPROVED"
-                    ? "font-semibold text-green-300"
-                    : dbUser.sellerStatus === "PENDING"
-                      ? "font-semibold text-yellow-300"
-                      : dbUser.sellerStatus === "REJECTED"
-                        ? "font-semibold text-red-300"
-                        : "font-semibold text-neutral-300"
-                }
-              >
-                {dbUser.sellerStatus}
-              </span>
+            <span className={`
+              inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-[0.15em]
+              ${dbUser.sellerStatus === "APPROVED"
+                ? "bg-green-500/10 text-green-300 border border-green-500/30"
+                : dbUser.sellerStatus === "PENDING"
+                  ? "bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                  : dbUser.sellerStatus === "REJECTED"
+                    ? "bg-red-500/10 text-red-300 border border-red-500/30"
+                    : "bg-neutral-800 text-neutral-400 border border-neutral-700"
+              }
+            `}>
+              <span className={`h-1.5 w-1.5 rounded-full ${dbUser.sellerStatus === "APPROVED" ? "bg-green-400" :
+                  dbUser.sellerStatus === "PENDING" ? "bg-amber-400 animate-pulse" :
+                    dbUser.sellerStatus === "REJECTED" ? "bg-red-400" : "bg-neutral-500"
+                }`} />
+              {dbUser.sellerStatus.toLowerCase()}
             </span>
           )}
 
+          {/* Join date */}
           {dbUser?.createdAt && (
             <span className="text-[11px] text-neutral-500">
-              Joined {new Date(dbUser.createdAt).toLocaleDateString("en-GB")}
+              Member since {new Date(dbUser.createdAt).toLocaleDateString("en-GB", {
+                month: "short",
+                year: "numeric"
+              })}
             </span>
           )}
         </div>
