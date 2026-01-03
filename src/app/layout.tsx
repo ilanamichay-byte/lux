@@ -42,11 +42,18 @@ export default async function RootLayout({
     "Account";
 
   let pendingSellerCount: number | null = null;
+
   if (isAdmin) {
-    pendingSellerCount = await prisma.user.count({
-      where: { sellerStatus: "PENDING" },
-    });
+    try {
+      pendingSellerCount = await prisma.user.count({
+        where: { sellerStatus: "PENDING" },
+      });
+    } catch (e) {
+      console.error("Failed to fetch pending seller count:", e);
+      pendingSellerCount = null; // או 0, לפי איך אתה מציג את זה ב-UI
+    }
   }
+
 
   let unreadNotificationsCount = 0;
 
@@ -84,22 +91,21 @@ export default async function RootLayout({
           </div>
 
           {/* HEADER */}
-          <header className="sticky top-0 z-50 border-b border-neutral-900/80 bg-black/90 backdrop-blur-md">
-            <div className="mx-auto flex h-20 max-w-7xl items-center gap-6 px-4 lg:px-8">
-              {/* לוגו */}
-              <div className="flex min-w-[220px] flex-shrink-0 items-center gap-4">
+          <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-md">
+            <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 lg:px-8">
+              {/* Logo - neutral, professional */}
+              <div className="flex min-w-[200px] flex-shrink-0 items-center gap-3">
                 <Link href="/" className="group flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-yellow-500/20 bg-yellow-500/10 shadow-[0_0_15px_rgba(234,179,8,0.15)] transition-all group-hover:bg-yellow-500/20 group-hover:shadow-[0_0_25px_rgba(234,179,8,0.3)]">
-                    <span className="text-xl text-yellow-400">♦</span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card-elevated transition-colors group-hover:border-gray-500">
+                    <span className="text-lg text-gray-300">◆</span>
                   </div>
 
                   <div className="flex flex-col">
-                    <div className="leading-none text-lg font-bold tracking-[0.25em] text-white">
-                      <span>LUX</span>
-                      <span className="ml-1 text-yellow-500">AUCTION</span>
+                    <div className="leading-none text-base font-semibold tracking-[0.2em] text-gray-100">
+                      LUX<span className="text-gray-400">AUCTION</span>
                     </div>
-                    <div className="mt-1 hidden text-[9px] uppercase tracking-[0.22em] text-neutral-500 md:block">
-                      THE NATIONAL JEWELRY EXCHANGE
+                    <div className="mt-0.5 hidden text-[8px] uppercase tracking-[0.2em] text-gray-500 md:block">
+                      National Jewelry Exchange
                     </div>
                   </div>
                 </Link>
@@ -174,12 +180,12 @@ export default async function RootLayout({
                       {isAdmin && (
                         <Link
                           href="/admin/users"
-                          className="rounded-full border border-yellow-500/50 px-3 py-1.5 text-[10px] font-bold tracking-wider text-yellow-500 hover:bg-yellow-500/10"
+                          className="rounded-lg border border-gray-600 px-3 py-1.5 text-[10px] font-medium tracking-wider text-gray-300 transition-colors hover:border-gray-500 hover:text-white"
                         >
                           ADMIN
                           {pendingSellerCount !== null &&
                             pendingSellerCount > 0 && (
-                              <span className="ml-2 rounded-sm bg-yellow-500 px-1.5 text-[9px] font-bold text-black">
+                              <span className="ml-2 rounded bg-warning px-1.5 text-[9px] font-bold text-black">
                                 {pendingSellerCount}
                               </span>
                             )}
@@ -189,7 +195,7 @@ export default async function RootLayout({
                       {!isBuyer && !isVerifiedSeller && !isAdmin && (
                         <Link
                           href="/become-verified"
-                          className="rounded-full border border-yellow-500/50 px-3 py-1.5 text-[10px] font-bold tracking-wider text-yellow-500 hover:bg-yellow-500/10"
+                          className="rounded-lg border border-gray-600 px-3 py-1.5 text-[10px] font-medium tracking-wider text-gray-300 transition-colors hover:border-gray-500 hover:text-white"
                         >
                           BECOME VERIFIED
                         </Link>
@@ -222,7 +228,7 @@ export default async function RootLayout({
                 ) : (
                   <Link
                     href="/sign-in"
-                    className="rounded-full bg-yellow-500 px-5 py-2 text-xs font-bold tracking-wide text-black transition-colors hover:bg-yellow-400"
+                    className="rounded-lg bg-primary px-5 py-2 text-xs font-semibold tracking-wide text-primary-foreground transition-colors hover:bg-primary-hover"
                   >
                     SIGN IN
                   </Link>
@@ -232,11 +238,12 @@ export default async function RootLayout({
 
             {/* ROLE BAR */}
             {isLoggedIn && (
-              <div className="border-t border-neutral-800/50 bg-neutral-950/50 backdrop-blur-sm">
+              <div className="border-t border-border-subtle bg-card-elevated/50">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 lg:px-8">
                   <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                    <div className={`h-1.5 w-1.5 rounded-full ${isAdmin ? "bg-info" : isSeller ? "bg-positive" : "bg-gray-500"
+                      }`} />
+                    <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-gray-500">
                       {isAdmin
                         ? "Admin Console"
                         : isSeller
@@ -245,18 +252,18 @@ export default async function RootLayout({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3 text-[11px] font-medium text-neutral-400">
+                  <div className="flex items-center gap-3 text-[11px] font-medium text-gray-400">
                     {isSeller && !isAdmin && (
                       <Link
                         href="/seller/list-item"
-                        className="flex items-center gap-1 hover:text-yellow-400"
+                        className="flex items-center gap-1 transition-colors hover:text-white"
                       >
                         + List Item
                       </Link>
                     )}
                     <Link
                       href="/account"
-                      className="rounded-full bg-neutral-900/80 px-3 py-1 text-[11px] text-neutral-200 hover:bg-neutral-800 hover:text-yellow-200"
+                      className="rounded-lg bg-card-inner px-3 py-1 text-[11px] text-gray-300 transition-colors hover:bg-muted hover:text-white"
                     >
                       Dashboard
                     </Link>
@@ -274,14 +281,14 @@ export default async function RootLayout({
           </main>
 
           {/* FOOTER */}
-          <footer className="border-t border-neutral-900 bg-black py-12 text-xs text-neutral-500">
+          <footer className="border-t border-border bg-card py-10 text-xs text-gray-500">
             <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 md:flex-row">
-              <div className="flex flex-col items-center gap-2 md:items-start">
-                <div className="font-bold tracking-widest text-white">
+              <div className="flex flex-col items-center gap-1 md:items-start">
+                <div className="font-semibold tracking-widest text-gray-300">
                   LUX AUCTION
                 </div>
-                <div className="text-[10px] uppercase tracking-wider">
-                  The National Jewelry Exchange
+                <div className="text-[10px] uppercase tracking-wider text-gray-600">
+                  National Jewelry Exchange
                 </div>
                 <div className="mt-1">By Zvika &amp; Amichay Ilan</div>
               </div>
