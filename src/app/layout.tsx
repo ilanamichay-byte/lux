@@ -50,9 +50,10 @@ export default async function RootLayout({
       });
     } catch (e) {
       console.error("Failed to fetch pending seller count:", e);
-      pendingSellerCount = null; // או 0, לפי איך אתה מציג את זה ב-UI
+      pendingSellerCount = null; // או 0, אם ה-UI מצפה למספר
     }
   }
+
 
 
   let unreadNotificationsCount = 0;
