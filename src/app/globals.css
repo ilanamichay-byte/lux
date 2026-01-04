@@ -1,60 +1,74 @@
 @import "tailwindcss";
 
 :root {
-  /* ===== LUXURY DARK THEME ===== */
-  
-  /* Core backgrounds - refined luxury blacks */
-  --background: #050505;
-  --foreground: #fafafa;
-  
-  /* Card surfaces with depth */
-  --card: #0a0a0a;
-  --card-foreground: #fafafa;
-  --card-elevated: #0d0d0d;
-  
+  /* ===== TRADING FLOOR DARK THEME ===== */
+  /* Layered charcoal surfaces (NOT pure black) */
+
+  /* Page background - deepest charcoal */
+  --background: #0c0c0e;
+  --foreground: #e8e8ea;
+
+  /* Card surfaces - progressive lightening */
+  --card: #121214;
+  --card-foreground: #e8e8ea;
+  --card-elevated: #18181b;
+  --card-inner: #1e1e22;
+
   /* Popover/dropdown */
-  --popover: #0a0a0a;
-  --popover-foreground: #fafafa;
-  
-  /* Primary Gold - use sparingly for CTAs only */
-  --primary: #c5a059;
-  --primary-foreground: #000000;
-  --primary-soft: #d4b978; /* Softer gold for hover states */
-  
-  /* Champagne/Ivory - luxury alternative to pure gold */
-  --champagne: #f5f0e6;
-  --champagne-muted: #e8e0d0;
-  
-  /* Neutral Luxury Palette */
-  --platinum: #8b8b8b;
-  --pearl: #f5f5f5;
-  --onyx: #0d0d0d;
-  --charcoal: #1a1a1a;
-  
+  --popover: #121214;
+  --popover-foreground: #e8e8ea;
+
+  /* Primary Gold - SUBDUED, use ONLY for primary CTA */
+  --primary: #b8944d;
+  --primary-foreground: #0c0c0e;
+  --primary-hover: #a6863f;
+
+  /* Neutral Grays - the core palette */
+  --gray-50: #fafafa;
+  --gray-100: #e4e4e7;
+  --gray-200: #a1a1aa;
+  --gray-300: #71717a;
+  --gray-400: #52525b;
+  --gray-500: #3f3f46;
+  --gray-600: #27272a;
+  --gray-700: #1e1e22;
+  --gray-800: #18181b;
+  --gray-900: #121214;
+
   /* Secondary & Muted */
-  --secondary: #1f1f1f;
-  --secondary-foreground: #fafafa;
-  --muted: #1f1f1f;
+  --secondary: #1e1e22;
+  --secondary-foreground: #e4e4e7;
+  --muted: #27272a;
   --muted-foreground: #a1a1aa;
-  
+
   /* Accent - subtle elevation */
   --accent: #27272a;
-  --accent-foreground: #fafafa;
-  
-  /* Semantic Colors */
-  --destructive: #7f1d1d;
+  --accent-foreground: #e4e4e7;
+
+  /* Semantic Colors - Trading Floor Status */
+  --positive: #22c55e;
+  --positive-muted: rgba(34, 197, 94, 0.15);
+  --negative: #ef4444;
+  --negative-muted: rgba(239, 68, 68, 0.15);
+  --warning: #f59e0b;
+  --warning-muted: rgba(245, 158, 11, 0.15);
+  --info: #3b82f6;
+  --info-muted: rgba(59, 130, 246, 0.15);
+
+  /* Legacy semantic (for compatibility) */
+  --destructive: #dc2626;
   --destructive-foreground: #fef2f2;
-  --success: #166534;
+  --success: #16a34a;
   --success-foreground: #dcfce7;
-  --warning: #92400e;
-  --warning-foreground: #fef3c7;
-  
-  /* Borders & Inputs */
+
+  /* Borders - subtle separators */
   --border: #27272a;
-  --border-subtle: #1f1f1f;
+  --border-subtle: #1e1e22;
+  --border-strong: #3f3f46;
   --input: #27272a;
-  --ring: #c5a059;
-  
+  --ring: #52525b;
+  /* Neutral focus ring, NOT gold */
+
   /* Spacing & Radius */
   --radius: 0.5rem;
 }
@@ -65,31 +79,33 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-card-elevated: var(--card-elevated);
+  --color-card-inner: var(--card-inner);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-primary-soft: var(--primary-soft);
-  --color-champagne: var(--champagne);
-  --color-champagne-muted: var(--champagne-muted);
-  --color-platinum: var(--platinum);
-  --color-pearl: var(--pearl);
-  --color-onyx: var(--onyx);
-  --color-charcoal: var(--charcoal);
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-positive: var(--positive);
+  --color-positive-muted: var(--positive-muted);
+  --color-negative: var(--negative);
+  --color-negative-muted: var(--negative-muted);
+  --color-warning: var(--warning);
+  --color-warning-muted: var(--warning-muted);
+  --color-info: var(--info);
+  --color-info-muted: var(--info-muted);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --radius-sm: calc(var(--radius) - 2px);
@@ -107,43 +123,85 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ===== UTILITY CLASSES FOR LUXURY STYLING ===== */
+/* ===== TRADING FLOOR UTILITY CLASSES ===== */
 
-/* Gold should only be used for primary CTAs */
-.btn-primary-gold {
+/* Primary CTA - gold, use sparingly (max 1-2 per viewport) */
+.btn-primary {
   background: var(--primary);
   color: var(--primary-foreground);
-  transition: background 0.2s ease;
-}
-.btn-primary-gold:hover {
-  background: var(--primary-soft);
+  font-weight: 600;
+  transition: background 0.15s ease;
 }
 
-/* Use white/neutral for secondary actions */
-.btn-secondary-neutral {
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-primary:disabled {
+  background: var(--gray-600);
+  color: var(--gray-400);
+}
+
+/* Secondary button - neutral outline */
+.btn-secondary {
   background: transparent;
   border: 1px solid var(--border);
-  color: var(--foreground);
-  transition: all 0.2s ease;
-}
-.btn-secondary-neutral:hover {
-  border-color: var(--platinum);
-  color: var(--pearl);
+  color: var(--gray-200);
+  transition: all 0.15s ease;
 }
 
-/* Champagne highlight for softer luxury accents */
-.text-champagne {
-  color: var(--champagne);
-}
-.bg-champagne-subtle {
-  background: rgba(245, 240, 230, 0.05);
+.btn-secondary:hover {
+  border-color: var(--gray-400);
+  color: var(--gray-50);
 }
 
-/* Card elevation states */
-.card-elevated {
+/* Tertiary - text only */
+.btn-tertiary {
+  background: transparent;
+  color: var(--gray-300);
+  transition: color 0.15s ease;
+}
+
+.btn-tertiary:hover {
+  color: var(--gray-100);
+}
+
+/* Price/number display - tabular for alignment */
+.price-display {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Status indicators - semantic */
+.status-positive {
+  color: var(--positive);
+}
+
+.status-negative {
+  color: var(--negative);
+}
+
+.status-warning {
+  color: var(--warning);
+}
+
+.status-info {
+  color: var(--info);
+}
+
+/* Card layers */
+.surface-base {
+  background: var(--background);
+}
+
+.surface-card {
+  background: var(--card);
+}
+
+.surface-elevated {
   background: var(--card-elevated);
-  border-color: var(--border);
 }
-.card-elevated:hover {
-  border-color: var(--platinum);
+
+.surface-inner {
+  background: var(--card-inner);
 }

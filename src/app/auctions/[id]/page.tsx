@@ -274,32 +274,32 @@ export default async function AuctionDetailsPage({
   return (
     <div className="space-y-6">
       {/* Top navigation bar */}
-      <div className="flex items-center justify-between gap-2 text-xs text-neutral-400">
+      <div className="flex items-center justify-between gap-2 text-xs text-gray-400">
         <div className="flex items-center gap-2">
           <Link
             href="/auctions"
-            className="rounded-full border border-neutral-700 bg-neutral-900/80 px-3 py-1.5 text-neutral-300 transition-colors hover:border-neutral-500 hover:text-white"
+            className="rounded-lg border border-border bg-card-elevated px-3 py-1.5 text-gray-300 transition-colors hover:border-gray-500 hover:text-white"
           >
             ← Back to auctions
           </Link>
-          <span className="hidden text-[10px] uppercase tracking-[0.2em] text-neutral-500 md:inline">
+          <span className="hidden text-[10px] uppercase tracking-[0.15em] text-gray-500 md:inline">
             Auction lot
           </span>
         </div>
         {endsAt && (
           <span
             className={cn(
-              "rounded-full border px-4 py-1.5 text-[11px] font-semibold",
+              "rounded-lg border px-4 py-1.5 text-[11px] font-medium",
               auctionEnded
-                ? "border-neutral-700 bg-neutral-800/80 text-neutral-400"
-                : "border-amber-500/40 bg-amber-500/10 text-amber-200"
+                ? "border-border bg-card-elevated text-gray-400"
+                : "border-warning/30 bg-warning-muted text-warning"
             )}
           >
             {auctionEnded ? "ENDED" : "ENDS IN: "}
             {endsAt && !auctionEnded ? (
               <CountdownTimer endDate={new Date(endsAt)} className="inline-flex text-xs font-bold" />
             ) : (
-              <span className="font-normal text-neutral-400">
+              <span className="font-normal text-gray-500">
                 {new Date(endsAt!).toLocaleString("en-GB")}
               </span>
             )}
@@ -307,30 +307,30 @@ export default async function AuctionDetailsPage({
         )}
       </div>
 
-      <div className="grid gap-8 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        {/* צד שמאל – מידע על הלוט */}
-        <div className="space-y-5 rounded-2xl border border-neutral-800 bg-neutral-950/90 p-6">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        {/* Left side - Lot info */}
+        <div className="space-y-5 rounded-xl border border-border bg-card p-6">
+          <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500">
             Auction lot
           </p>
-          <h1 className="text-2xl font-semibold text-white">
+          <h1 className="text-2xl font-semibold text-gray-100">
             {title}
           </h1>
 
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-gray-400">
             Seller:{" "}
-            <span className="font-medium text-neutral-100">
+            <span className="font-medium text-gray-200">
               {sellerDisplayName}
             </span>
           </p>
 
           {description && (
-            <p className="mt-3 text-sm leading-relaxed text-neutral-200">
+            <p className="mt-3 text-sm leading-relaxed text-gray-300">
               {description}
             </p>
           )}
 
-          {/* עכשיו משתמשים בגלריה אמיתית */}
+          {/* Product gallery */}
           <div className="mt-4">
             <ProductGallery
               images={anyItem.mainImageUrl ? [anyItem.mainImageUrl] : []}
@@ -338,36 +338,44 @@ export default async function AuctionDetailsPage({
             />
           </div>
 
-          {/* היסטוריית בידים */}
-          <div className="mt-5 space-y-2 rounded-xl border border-neutral-800 bg-black/70 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-500">
+          {/* Bid history */}
+          <div className="mt-5 space-y-3 rounded-lg border border-border-subtle bg-card-elevated p-4">
+            <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500">
               Recent bids
             </p>
             {bidCount === 0 ? (
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-gray-500">
                 No bids placed yet. Be the first to bid.
               </p>
             ) : (
-              <div className="space-y-2 text-xs text-neutral-200">
-                {bids.slice(0, 6).map((bid) => {
+              <div className="space-y-2 text-xs">
+                {bids.slice(0, 6).map((bid, idx) => {
                   const bidderName =
                     bid.bidder?.name ||
                     bid.bidder?.email ||
                     "Bidder";
+                  const isLeading = idx === 0;
                   return (
                     <div
                       key={bid.id}
                       className="flex items-center justify-between gap-2"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral-800 text-[10px] font-semibold uppercase text-neutral-100">
+                        <span className={`flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-medium uppercase ${isLeading ? "bg-positive/20 text-positive" : "bg-card-inner text-gray-300"
+                          }`}>
                           {bidderName.charAt(0)}
                         </span>
-                        <span className="text-[11px] text-neutral-300">
+                        <span className={`font-mono text-[11px] ${isLeading ? "text-positive font-medium" : "text-gray-300"
+                          }`}>
                           {currency} {bid.amount.toLocaleString()}
                         </span>
+                        {isLeading && (
+                          <span className="text-[9px] uppercase tracking-wider text-positive">
+                            Leading
+                          </span>
+                        )}
                       </div>
-                      <span className="text-[10px] text-neutral-500">
+                      <span className="text-[10px] text-gray-500">
                         {new Date(
                           bid.createdAt,
                         ).toLocaleString("en-GB")}
@@ -381,43 +389,43 @@ export default async function AuctionDetailsPage({
         </div>
 
         {/* Right side - Bidding Panel */}
-        <div className="space-y-5 rounded-2xl border border-neutral-800 bg-neutral-950/90 p-6">
+        <div className="space-y-5 rounded-xl border border-border bg-card p-6">
           {/* Panel Header */}
-          <div className="border-b border-neutral-800 pb-4">
-            <h2 className="text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+          <div className="border-b border-border-subtle pb-4">
+            <h2 className="text-[10px] uppercase tracking-[0.15em] text-gray-500">
               Bidding Panel
             </h2>
           </div>
 
           {/* Error message */}
           {errorMessage && (
-            <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-[12px] text-red-200">
+            <div className="rounded-lg border border-negative/30 bg-negative-muted px-4 py-3 text-[12px] text-negative">
               {errorMessage}
             </div>
           )}
 
           {/* Current Price Block - Prominent */}
-          <div className="rounded-xl bg-neutral-900/60 p-4">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">
+          <div className="rounded-lg bg-card-elevated p-4">
+            <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500">
               {currentPrice != null ? "Current Bid" : "Starting Price"}
             </p>
             {currentPrice != null ? (
-              <p className="mt-1 text-2xl font-bold text-white">
+              <p className="mt-1 font-mono text-2xl font-bold text-positive">
                 {currency} {Number(currentPrice).toLocaleString()}
               </p>
             ) : startingPrice != null ? (
-              <p className="mt-1 text-2xl font-bold text-white">
+              <p className="mt-1 font-mono text-2xl font-bold text-gray-100">
                 {currency} {Number(startingPrice).toLocaleString()}
               </p>
             ) : (
-              <p className="mt-1 text-lg text-neutral-400">
+              <p className="mt-1 text-lg text-gray-500">
                 No starting price set
               </p>
             )}
 
             {/* Bid count */}
             {bidCount > 0 && (
-              <p className="mt-2 text-xs text-neutral-400">
+              <p className="mt-2 text-xs text-gray-400">
                 {bidCount} bid{bidCount !== 1 ? "s" : ""} placed
               </p>
             )}
@@ -426,16 +434,16 @@ export default async function AuctionDetailsPage({
           {/* Auction Status Info */}
           <div className="space-y-2 text-xs">
             {auctionEndDate && (
-              <p className="text-neutral-400">
+              <p className="text-gray-400">
                 Auction {auctionEnded ? "ended" : "ends"} at:{" "}
-                <span className="text-neutral-300">
+                <span className="text-gray-300">
                   {auctionEndDate.toLocaleString("en-GB")}
                 </span>
               </p>
             )}
 
             {!isOpenForBidding && (
-              <p className="rounded-lg bg-neutral-900 px-3 py-2 text-[11px] text-neutral-400">
+              <p className="rounded-lg bg-card-inner px-3 py-2 text-[11px] text-gray-500">
                 This auction is currently closed for bidding.
               </p>
             )}
@@ -443,11 +451,11 @@ export default async function AuctionDetailsPage({
 
           {/* Auth/Permission notices */}
           {!currentUserId && (
-            <div className="rounded-xl border border-neutral-700 bg-neutral-900/80 px-4 py-3 text-[12px] text-neutral-300">
+            <div className="rounded-lg border border-border bg-card-elevated px-4 py-3 text-[12px] text-gray-300">
               Please{" "}
               <Link
                 href="/sign-in"
-                className="font-semibold text-white underline-offset-2 hover:underline"
+                className="font-medium text-gray-100 underline-offset-2 hover:underline"
               >
                 sign in
               </Link>{" "}
@@ -456,7 +464,7 @@ export default async function AuctionDetailsPage({
           )}
 
           {currentUserId && isSellerOfItem && (
-            <div className="rounded-xl border border-neutral-700 bg-neutral-900/80 px-4 py-3 text-[12px] text-neutral-400">
+            <div className="rounded-lg border border-border bg-card-elevated px-4 py-3 text-[12px] text-gray-500">
               You are the seller of this lot. Sellers cannot bid on their own listings.
             </div>
           )}
@@ -471,14 +479,14 @@ export default async function AuctionDetailsPage({
             <div className="space-y-2">
               <label
                 htmlFor="bid-amount"
-                className="block text-[11px] uppercase tracking-[0.18em] text-neutral-500"
+                className="block text-[10px] uppercase tracking-[0.15em] text-gray-500"
               >
                 Your bid
               </label>
 
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-neutral-500">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-500">
                     {currency}
                   </span>
                   <input
@@ -488,7 +496,7 @@ export default async function AuctionDetailsPage({
                     min={minNextBid}
                     step={1}
                     inputMode="numeric"
-                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900/80 py-3 pl-12 pr-4 text-base text-white outline-none transition-colors focus:border-neutral-500 disabled:opacity-50"
+                    className="w-full rounded-lg border border-border bg-card-elevated py-3 pl-12 pr-4 font-mono text-base text-gray-100 outline-none transition-colors focus:border-gray-500 disabled:opacity-50"
                     placeholder={minNextBid.toLocaleString()}
                     disabled={!canBid}
                     required
@@ -496,16 +504,16 @@ export default async function AuctionDetailsPage({
                 </div>
                 <button
                   type="submit"
-                  className="flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-primary-soft disabled:bg-neutral-700 disabled:text-neutral-400"
+                  className="flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:bg-muted disabled:text-gray-500"
                   disabled={!canBid}
                 >
                   Place Bid
                 </button>
               </div>
 
-              <p className="text-[11px] text-neutral-500">
+              <p className="text-[11px] text-gray-500">
                 Minimum:{" "}
-                <span className="text-neutral-300">
+                <span className="font-mono text-gray-300">
                   {currency} {minNextBid.toLocaleString()}
                 </span>
               </p>
@@ -513,7 +521,7 @@ export default async function AuctionDetailsPage({
           </form>
 
           {/* Fine print */}
-          <p className="border-t border-neutral-800 pt-4 text-[10px] leading-relaxed text-neutral-600">
+          <p className="border-t border-border-subtle pt-4 text-[10px] leading-relaxed text-gray-600">
             All bids are binding. Review our terms before placing a bid.
           </p>
         </div>
