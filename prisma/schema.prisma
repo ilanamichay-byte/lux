@@ -1,11 +1,156 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-
 generator client {
   provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id              String         @id @default(cuid())
+  email           String         @unique
+  name            String?
+  role            UserRole       @default(BUYER)
+  sellerStatus    SellerStatus   @default(NONE)
+  passwordHash    String?        @map("password_hash")
+  createdAt       DateTime       @default(now())
+  bids            Bid[]
+  dealsAsBuyer    Deal[]         @relation("BuyerDeals")
+  dealsAsSeller   Deal[]         @relation("SellerDeals")
+  items           Item[]         @relation("SellerItems")
+  notifications   Notification[] @relation("UserNotifications")
+  offers          Offer[]        @relation("SellerOffers")
+  requests        Request[]      @relation("BuyerRequests")
+  reviewsGiven    Review[]       @relation("ReviewsGiven")
+  reviewsReceived Review[]       @relation("ReviewsReceived")
+  wishlist        Wishlist[]     @relation("UserWishlist")
+}
+
+model Item {
+  id            String     @id @default(cuid())
+  title         String
+  description   String?
+  category      String?
+  mainImageUrl  String?
+  saleType      SaleType
+  startingPrice Int?
+  buyNowPrice   Int?
+  currency      String?    @default("USD")
+  auctionEnd    DateTime?
+  status        ItemStatus @default(PUBLISHED)
+  sellerId      String
+  createdAt     DateTime   @default(now())
+  bids          Bid[]
+  deals         Deal[]     @relation("ItemDeals")
+  seller        User       @relation("SellerItems", fields: [sellerId], references: [id])
+  wishlistedBy  Wishlist[] @relation("ItemWishlist")
+
+  @@index([status, saleType])
+  @@index([category])
+  @@index([title])
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  amount    Int
+  createdAt DateTime @default(now())
+  itemId    String
+  bidderId  String
+  bidder    User     @relation(fields: [bidderId], references: [id])
+  item      Item     @relation(fields: [itemId], references: [id])
+}
+
+model Request {
+  id            String        @id @default(cuid())
+  title         String
+  description   String?
+  category      String?
+  budgetMax     Int?
+  currency      String?       @default("USD")
+  createdAt     DateTime      @default(now())
+  status        RequestStatus @default(OPEN)
+  buyerId       String
+  chosenOfferId String?
+  deals         Deal[]        @relation("RequestDeals")
+  offers        Offer[]
+  buyer         User          @relation("BuyerRequests", fields: [buyerId], references: [id])
+}
+
+model Offer {
+  id          String      @id @default(cuid())
+  description String?
+  price       Int?
+  createdAt   DateTime    @default(now())
+  requestId   String
+  sellerId    String
+  status      OfferStatus @default(PENDING)
+  deal        Deal?       @relation("OfferDeal")
+  request     Request     @relation(fields: [requestId], references: [id])
+  seller      User        @relation("SellerOffers", fields: [sellerId], references: [id])
+}
+
+model Deal {
+  id         String     @id @default(cuid())
+  buyerId    String
+  sellerId   String
+  requestId  String?
+  offerId    String?    @unique
+  itemId     String?
+  status     DealStatus @default(OPEN)
+  totalPrice Int?
+  currency   String?    @default("USD")
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  buyer      User       @relation("BuyerDeals", fields: [buyerId], references: [id])
+  item       Item?      @relation("ItemDeals", fields: [itemId], references: [id])
+  offer      Offer?     @relation("OfferDeal", fields: [offerId], references: [id])
+  request    Request?   @relation("RequestDeals", fields: [requestId], references: [id])
+  seller     User       @relation("SellerDeals", fields: [sellerId], references: [id])
+  review     Review?    @relation("DealReview")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO")
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation("UserNotifications", fields: [userId], references: [id])
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  itemId    String
+  createdAt DateTime @default(now())
+  item      Item     @relation("ItemWishlist", fields: [itemId], references: [id])
+  user      User     @relation("UserWishlist", fields: [userId], references: [id])
+
+  @@unique([userId, itemId])
+  @@index([userId])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  reviewerId String
+  sellerId   String
+  dealId     String   @unique
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+  deal       Deal     @relation("DealReview", fields: [dealId], references: [id])
+  reviewer   User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  seller     User     @relation("ReviewsReceived", fields: [sellerId], references: [id])
+
+  @@index([sellerId])
 }
 
 enum UserRole {
@@ -51,192 +196,9 @@ enum SaleType {
 }
 
 enum DealStatus {
-  OPEN             // הצעה התקבלה, יש עסקה פתוחה
-  PENDING_PAYMENT  // יצאנו לצ'קאאוט / תשלום
-  PAID             // התשלום הושלם
-  CANCELLED        // בוטל
-  COMPLETE         // נסגר סופית
-}
-
-model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  name         String?
-  role         UserRole      @default(BUYER)
-  sellerStatus SellerStatus  @default(NONE)
-  passwordHash String?       @map("password_hash")
-  createdAt    DateTime      @default(now())
-
-  items        Item[]        @relation("SellerItems")
-  bids         Bid[]
-  requests     Request[]     @relation("BuyerRequests")
-  offers       Offer[]       @relation("SellerOffers")
-
-  dealsAsBuyer  Deal[]       @relation("BuyerDeals")
-  dealsAsSeller Deal[]       @relation("SellerDeals")
-
-  notifications Notification[] @relation("UserNotifications")
-  wishlist      Wishlist[]     @relation("UserWishlist")
-  reviewsGiven  Review[]       @relation("ReviewsGiven")
-  reviewsReceived Review[]     @relation("ReviewsReceived")
-}
-
-model Item {
-  id            String      @id @default(cuid())
-  title         String
-  description   String?
-  category      String?
-  mainImageUrl  String?
-  saleType      SaleType
-  startingPrice Int?
-  buyNowPrice   Int?
-  currency      String?     @default("USD")
-  auctionEnd    DateTime?
-
-  status        ItemStatus  @default(PUBLISHED)
-
-  seller        User        @relation("SellerItems", fields: [sellerId], references: [id])
-  sellerId      String
-
-  bids          Bid[]
-  createdAt     DateTime    @default(now())
-
-  deals         Deal[]      @relation("ItemDeals")
-  wishlistedBy  Wishlist[]  @relation("ItemWishlist")
-
-  @@index([status, saleType])
-  @@index([category])
-  @@index([title])
-}
-
-model Bid {
-  id        String   @id @default(cuid())
-  amount    Int
-  createdAt DateTime @default(now())
-
-  item      Item     @relation(fields: [itemId], references: [id])
-  itemId    String
-
-  bidder    User     @relation(fields: [bidderId], references: [id])
-  bidderId  String
-}
-
-model Request {
-  id            String        @id @default(cuid())
-  title         String
-  description   String?
-  category      String?
-  budgetMax     Int?
-  currency      String?       @default("USD")
-  createdAt     DateTime      @default(now())
-
-  status        RequestStatus @default(OPEN)
-
-  buyer         User          @relation("BuyerRequests", fields: [buyerId], references: [id])
-  buyerId       String
-
-  offers        Offer[]
-  chosenOfferId String?
-
-  deals         Deal[]        @relation("RequestDeals")
-}
-
-model Offer {
-  id          String       @id @default(cuid())
-  description String?
-  price       Int?
-  createdAt   DateTime     @default(now())
-
-  request     Request      @relation(fields: [requestId], references: [id])
-  requestId   String
-
-  seller      User         @relation("SellerOffers", fields: [sellerId], references: [id])
-  sellerId    String
-
-  status      OfferStatus  @default(PENDING)
-
-  deal        Deal?        @relation("OfferDeal")
-}
-
-model Deal {
-  id         String     @id @default(cuid())
-
-  buyer      User       @relation("BuyerDeals", fields: [buyerId], references: [id])
-  buyerId    String
-
-  seller     User       @relation("SellerDeals", fields: [sellerId], references: [id])
-  sellerId   String
-
-  // 👇 עכשיו אופציונלי – כדי לאפשר דילים של Marketplace בלי Request
-  request    Request?   @relation("RequestDeals", fields: [requestId], references: [id])
-  requestId  String?
-
-  // 👇 גם Offer אופציונלי – לדילים של Buy Now אין Offer
-  offer      Offer?     @relation("OfferDeal", fields: [offerId], references: [id])
-  offerId    String?    @unique
-
-  item       Item?      @relation("ItemDeals", fields: [itemId], references: [id])
-  itemId     String?
-
-  status     DealStatus @default(OPEN)
-  totalPrice Int?
-  currency   String?    @default("USD")
-
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-
-  review     Review?    @relation("DealReview")
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  
-  user      User     @relation("UserNotifications", fields: [userId], references: [id])
-  userId    String
-
-  title     String
-  message   String
-  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
-  link      String?
-  
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@index([userId, read])
-  @@index([createdAt])
-}
-
-model Wishlist {
-  id        String   @id @default(cuid())
-  
-  user      User     @relation("UserWishlist", fields: [userId], references: [id])
-  userId    String
-
-  item      Item     @relation("ItemWishlist", fields: [itemId], references: [id])
-  itemId    String
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, itemId])
-  @@index([userId])
-}
-
-model Review {
-  id        String   @id @default(cuid())
-  
-  reviewer  User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
-  reviewerId String
-
-  seller    User     @relation("ReviewsReceived", fields: [sellerId], references: [id])
-  sellerId  String
-
-  deal      Deal     @relation("DealReview", fields: [dealId], references: [id])
-  dealId    String   @unique
-
-  rating    Int      // 1-5
-  comment   String?
-  
-  createdAt DateTime @default(now())
-
-  @@index([sellerId])
+  OPEN
+  PENDING_PAYMENT
+  PAID
+  CANCELLED
+  COMPLETE
 }
